@@ -22,8 +22,8 @@ public class AdmobAdsService : Service, IAdsService
     public bool Initialized => _initialized;
     public bool InterstitialAdAvailable => false;
     public bool RewardedAdAvailable => false;
-    public bool BannerShowing => false;
-    public float BannerHeight => 0f;
+    public bool BannerShowing => _banner != null && _banner.IsShowing;
+    public float BannerHeight => _banner != null ? _banner.GetBannerHeight() : 0f;
 
     public event Action EventBannerShown;
     public event Action EventBannerHidden;
