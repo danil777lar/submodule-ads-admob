@@ -17,11 +17,14 @@ public class AdmobAdsService : Service, IAdsService
     private bool _initialized;
 
     private Keys _keys;
+
     private AdmobAdsBanner _banner;
+    private AdmobAdsInterstitial _interstitial;
+    private AdmobAdsRewarded _rewarded;
 
     public bool Initialized => _initialized;
-    public bool InterstitialAdAvailable => false;
-    public bool RewardedAdAvailable => false;
+    public bool InterstitialAdAvailable => _interstitial != null && _interstitial.CanShowInterstitial();
+    public bool RewardedAdAvailable => _rewarded != null && _rewarded.CanShowRewarded();
     public bool BannerShowing => _banner != null && _banner.IsShowing;
     public float BannerHeight => _banner != null ? _banner.GetBannerHeight() : 0f;
 
@@ -44,10 +47,12 @@ public class AdmobAdsService : Service, IAdsService
 
     public void ShowInterstitial(int interIndex = 0)
     {
+        _interstitial?.ShowInterstitial();
     }
 
     public void ShowRewarded(Action onAdShowStart, Action onAdShowClick, Action onAdShowComplete, Action onAdShowFailed)
     {
+        _rewarded?.ShowRewarded(onAdShowComplete, onAdShowFailed);
     }
 
     private void OnAdmobInitialized(GoogleMobileAds.Api.InitializationStatus initStatus)
@@ -64,6 +69,9 @@ public class AdmobAdsService : Service, IAdsService
 
         _banner = new AdmobAdsBanner(_keys.AdaptiveBanner);
         _banner.ShowBanner();
+
+        _interstitial = new AdmobAdsInterstitial(_keys.Interstitial);
+        _rewarded = new AdmobAdsRewarded(_keys.RewardedAds);
     }
 
     [Serializable]
