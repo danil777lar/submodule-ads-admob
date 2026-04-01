@@ -50,11 +50,12 @@ public class AdmobAdsBanner
     public float GetBannerHeight()
     {
         float screenDpi = Screen.dpi;
-#if UNITY_EDITOR
-        screenDpi = 160f;
-#endif
         float height = Mathf.RoundToInt(DEFAULT_BANNER_DPI * screenDpi / 160);
         height *= BACK_HEIGHT_MULTIPLIER;
+
+#if UNITY_EDITOR
+        height = 100f;
+#endif
         return height;
     }
 }
