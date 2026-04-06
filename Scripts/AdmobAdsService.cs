@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using GoogleMobileAds.Api;
 using Larje.Core;
 using Larje.Core.Services;
@@ -14,7 +15,11 @@ public class AdmobAdsService : Service, IAdsService
     [SerializeField] private Keys androidKeys;
     [SerializeField] private Keys iosKeys;
 
+    [Header("Editor")]
+    [SerializeField] private bool disableAdsInEditor;
+
     private bool _initialized;
+    private bool _delayed;
 
     private Keys _keys;
 
@@ -47,12 +52,27 @@ public class AdmobAdsService : Service, IAdsService
 
     public void ShowInterstitial(int interIndex = 0)
     {
-        _interstitial?.ShowInterstitial();
+        if (!_delayed)
+        {
+            _interstitial?.ShowInterstitial();
+            DelayAds();
+        }
     }
 
     public void ShowRewarded(Action onAdShowStart, Action onAdShowClick, Action onAdShowComplete, Action onAdShowFailed)
     {
-        _rewarded?.ShowRewarded(onAdShowComplete, onAdShowFailed);
+        Action onComplete = () =>
+        {
+            onAdShowComplete?.Invoke();
+            DelayAds();
+        };
+
+        Action onFailed = () =>
+        {
+            onAdShowFailed?.Invoke();
+        };
+
+        _rewarded?.ShowRewarded(onComplete, onFailed);
     }
 
     private void OnAdmobInitialized(GoogleMobileAds.Api.InitializationStatus initStatus)
@@ -67,11 +87,33 @@ public class AdmobAdsService : Service, IAdsService
         Debug.LogWarning("Admob Ads Service is not supported on this platform.");
 #endif
 
-        _banner = new AdmobAdsBanner(_keys.AdaptiveBanner);
-        _banner.ShowBanner();
 
-        _interstitial = new AdmobAdsInterstitial(_keys.Interstitial);
-        _rewarded = new AdmobAdsRewarded(_keys.RewardedAds);
+        bool adsDisabled = false;
+
+#if UNITY_EDITOR
+        if (disableAdsInEditor)
+        {
+            adsDisabled = true;
+            Debug.Log("Admob Ads are disabled in the editor.");
+        }
+#endif
+
+        if (!adsDisabled)
+        {
+            _banner = new AdmobAdsBanner(_keys.AdaptiveBanner);
+            _banner.ShowBanner();
+
+            _interstitial = new AdmobAdsInterstitial(_keys.Interstitial);
+            _rewarded = new AdmobAdsRewarded(_keys.RewardedAds);
+        }
+    }
+
+    private void DelayAds()
+    {
+        _delayed = true;
+
+        this.DOKill();
+        DOVirtual.DelayedCall(delayBetweenAds, () => _delayed = false).SetTarget(this);
     }
 
     [Serializable]
