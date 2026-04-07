@@ -8,8 +8,12 @@ using UnityEngine;
 [BindService(typeof(IAdsService))]
 public class AdmobAdsService : Service, IAdsService
 {
-    [Header("System")]
+    [Header("Interstitial")]
     [SerializeField, Min(0f)] private float delayBetweenAds = 20f;
+
+    [Header("App Open")]
+    [SerializeField] private bool showAppOpenOnStart;
+    [SerializeField] private bool showAppOpenOnResume;
 
     [Header("Keys")] 
     [SerializeField] private Keys androidKeys;
@@ -20,12 +24,14 @@ public class AdmobAdsService : Service, IAdsService
 
     private bool _initialized;
     private bool _delayed;
+    private bool _appPaused;
 
     private Keys _keys;
 
     private AdmobAdsBanner _banner;
     private AdmobAdsInterstitial _interstitial;
     private AdmobAdsRewarded _rewarded;
+    private AdmobAdsAppOpen _appOpen;
 
     public bool Initialized => _initialized;
     public bool InterstitialAdAvailable => _interstitial != null && _interstitial.CanShowInterstitial();
@@ -47,7 +53,7 @@ public class AdmobAdsService : Service, IAdsService
 
     public bool ShowAppOpenAd()
     {
-        return true;
+        return _appOpen != null && _appOpen.ShowAppOpen();
     }
 
     public void ShowInterstitial(int interIndex = 0)
@@ -105,6 +111,28 @@ public class AdmobAdsService : Service, IAdsService
 
             _interstitial = new AdmobAdsInterstitial(_keys.Interstitial);
             _rewarded = new AdmobAdsRewarded(_keys.RewardedAds);
+            _appOpen = new AdmobAdsAppOpen(_keys.AppOpen);
+
+            if (showAppOpenOnStart)
+            {
+                ShowAppOpenAd();
+            }
+        }
+    }
+
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (pauseStatus)
+        {
+            _appPaused = true;
+        }
+        else if (_appPaused)
+        {
+            _appPaused = false;
+            if (showAppOpenOnResume)
+            {
+                ShowAppOpenAd();
+            }
         }
     }
 
