@@ -22,6 +22,8 @@ public class AdmobAdsService : Service, IAdsService
     [Header("Editor")]
     [SerializeField] private bool disableAdsInEditor;
 
+    [InjectService] private IDataService _dataService;
+
     private bool _initialized;
     private bool _delayed;
     private bool _appPaused;
@@ -53,15 +55,37 @@ public class AdmobAdsService : Service, IAdsService
 
     public bool ShowAppOpenAd()
     {
+        if (_dataService.GameData.NoAdsActive)
+        {
+            return false;
+        }
+
         return _appOpen != null && _appOpen.ShowAppOpen();
     }
 
     public void ShowInterstitial(int interIndex = 0)
     {
-        if (!_delayed)
+        if (_dataService.GameData.NoAdsActive || _delayed)
         {
-            _interstitial?.ShowInterstitial();
-            DelayAds();
+            return;
+        }
+
+        _interstitial?.ShowInterstitial();
+        DelayAds();
+    }
+
+    public void SetActiveNoAdsMode(bool noAdsActive)
+    {
+        _dataService.GameData.NoAdsActive = noAdsActive;
+        _dataService.SaveGameData();
+
+        if (noAdsActive)
+        {
+            _banner?.HideBanner();
+        }
+        else
+        {
+            _banner?.ShowBanner();
         }
     }
 
