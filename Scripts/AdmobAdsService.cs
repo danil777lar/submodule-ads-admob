@@ -43,6 +43,7 @@ public class AdmobAdsService : Service, IAdsService
 
     public event Action EventBannerShown;
     public event Action EventBannerHidden;
+    public event Action<bool> EventNoAdsModeChanged;
 
     public override void Init()
     {
@@ -78,6 +79,7 @@ public class AdmobAdsService : Service, IAdsService
     {
         _dataService.GameData.NoAdsActive = noAdsActive;
         _dataService.SaveGameData();
+        EventNoAdsModeChanged?.Invoke(noAdsActive);
 
         if (noAdsActive)
         {
